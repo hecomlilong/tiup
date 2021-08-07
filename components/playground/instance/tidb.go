@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/BurntSushi/toml"
+	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tiup/pkg/utils"
 )
 
@@ -33,13 +35,21 @@ type TiDBInstance struct {
 
 // NewTiDBInstance return a TiDBInstance
 func NewTiDBInstance(binPath string, dir, host, configPath string, id int, pds []*PDInstance, enableBinlog bool) *TiDBInstance {
+	// default port
+	port := 4000
+	// read from config file if possible
+	config := &config.Config{}
+	_, err := toml.DecodeFile(configPath, config)
+	if err == nil && config.Port > 0 {
+		port = int(config.Port)
+	}
 	return &TiDBInstance{
 		instance: instance{
 			BinPath:    binPath,
 			ID:         id,
 			Dir:        dir,
 			Host:       host,
-			Port:       utils.MustGetFreePort(host, 4000),
+			Port:       utils.MustGetFreePort(host, port),
 			StatusPort: utils.MustGetFreePort("0.0.0.0", 10080),
 			ConfigPath: configPath,
 		},
